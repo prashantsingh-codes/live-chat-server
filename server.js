@@ -44,6 +44,9 @@ const io = new Server(httpServer, {
     pingTimeout: 60000
 });
 
+// ── User socket map — outside connection handler so it persists ──
+const userSocketMap = {};
+
 io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
@@ -53,32 +56,21 @@ io.on("connection", (socket) => {
             return;
         }
         socket.join(userData._id.toString());
+        userSocketMap[userData._id.toString()] = socket.id; // track socket ID
         socket.emit("connected");
-        console.log("User setup complete:", userData._id);
+        console.log("User setup complete:", userData._id, "→ socket:", socket.id);
     });
 
     socket.on("join chat", (room) => {
-        if (!room) {
-            console.log("Join chat failed: no room provided");
-            return;
-        }
+        if (!room) return;
         socket.join(room);
         console.log("User joined room:", room);
     });
 
     socket.on("new message", (newMessage) => {
-        if (!newMessage || !newMessage.chat) {
-            console.log("new message failed: invalid message", newMessage);
-            return;
-        }
-
+        if (!newMessage || !newMessage.chat) return;
         const chat = newMessage.chat;
-
-        if (!chat.users || !Array.isArray(chat.users)) {
-            console.log("chat.users not defined or not an array");
-            return;
-        }
-
+        if (!chat.users || !Array.isArray(chat.users)) return;
         chat.users.forEach((user) => {
             if (!user || !user._id) return;
             if (user._id.toString() === newMessage.sender._id.toString()) return;
@@ -96,7 +88,42 @@ io.on("connection", (socket) => {
         socket.in(room).emit("stop typing");
     });
 
+    // ── Get socket ID of a user ──
+    socket.on("get-socket-id", (userId, callback) => {
+        const socketId = userSocketMap[userId?.toString()];
+        callback(socketId || null);
+    });
+
+    // ── Call signaling ──
+    socket.on("call:initiate", (data) => {
+        if (!data?.toSocketId) return;
+        io.to(data.toSocketId).emit("call:incoming", data);
+    });
+
+    socket.on("call:accepted", (data) => {
+        if (!data?.toSocketId) return;
+        io.to(data.toSocketId).emit("call:accepted", data);
+    });
+
+    socket.on("call:rejected", (data) => {
+        if (!data?.toSocketId) return;
+        io.to(data.toSocketId).emit("call:ended");
+    });
+
+    socket.on("call:ended", (data) => {
+        if (!data?.toSocketId) return;
+        io.to(data.toSocketId).emit("call:ended");
+    });
+
+    // ── Disconnect ──
     socket.on("disconnect", () => {
+        // Remove from userSocketMap
+        Object.keys(userSocketMap).forEach((uid) => {
+            if (userSocketMap[uid] === socket.id) {
+                delete userSocketMap[uid];
+                console.log("Removed user from socket map:", uid);
+            }
+        });
         console.log("Socket disconnected:", socket.id);
     });
 });
