@@ -51,15 +51,16 @@ io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
     socket.on("setup", (userData) => {
-        if (!userData || !userData._id) {
-            console.log("Setup failed: invalid userData", userData);
-            return;
-        }
-        socket.join(userData._id.toString());
-        userSocketMap[userData._id.toString()] = socket.id; // track socket ID
-        socket.emit("connected");
-        console.log("User setup complete:", userData._id, "→ socket:", socket.id);
-    });
+    if (!userData || !userData._id) {
+        console.log("Setup failed: invalid userData", userData);
+        return;
+    }
+    socket.join(userData._id.toString());
+    userSocketMap[userData._id.toString()] = socket.id;
+    socket.emit("connected");
+    console.log("User setup complete:", userData._id, "→ socket:", socket.id);
+    console.log("Current userSocketMap:", JSON.stringify(userSocketMap)); // ← add this
+});
 
     socket.on("join chat", (room) => {
         if (!room) return;
@@ -90,11 +91,12 @@ io.on("connection", (socket) => {
 
     // ── Get socket ID of a user ──
     socket.on("get-socket-id", (userId, callback) => {
-        const socketId = userSocketMap[userId?.toString()];
-        console.log(`get-socket-id: userId=${userId}, socketId=${socketId}`); // ← add this
-        console.log("Current userSocketMap:", userSocketMap); // ← add this
-        callback(socketId || null);
-    });
+    const socketId = userSocketMap[userId?.toString()];
+    console.log(`Looking for userId: ${userId}`);
+    console.log(`Found socketId: ${socketId}`);
+    console.log(`Full map: ${JSON.stringify(userSocketMap)}`); // ← add this
+    callback(socketId || null);
+});
 
     // ── Call signaling ──
     socket.on("call:initiate", (data) => {
