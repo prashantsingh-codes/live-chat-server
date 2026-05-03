@@ -15,7 +15,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd ~/live-chat-server
+            cd ~/live-chat-app/live-chat-server
             git pull
             npm install
             pm2 restart live-chat-server
