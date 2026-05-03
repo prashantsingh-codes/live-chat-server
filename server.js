@@ -91,6 +91,8 @@ io.on("connection", (socket) => {
     // ── Get socket ID of a user ──
     socket.on("get-socket-id", (userId, callback) => {
         const socketId = userSocketMap[userId?.toString()];
+        console.log(`get-socket-id: userId=${userId}, socketId=${socketId}`); // ← add this
+        console.log("Current userSocketMap:", userSocketMap); // ← add this
         callback(socketId || null);
     });
 
