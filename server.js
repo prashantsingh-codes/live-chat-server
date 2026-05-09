@@ -4,10 +4,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import { createServer } from "http";
 import { Server } from "socket.io";
-import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
 import connectDB from "./config/mongodb.js";
 import userRouter from "./routes/userRoute.js";
 import chatRouter from "./routes/chatRoute.js";
@@ -21,25 +19,6 @@ const app = express();
 const port = process.env.PORT || 5000;
 connectDB();
 
-// ── Ensure uploads folder exists ──
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-
-// ── Multer config ──
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-    },
-});
-
-const fileFilter = (req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/webm"];
-    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("File type not allowed"), false);
-};
-
-export const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB
 
 app.use(express.json());
 app.use(cors({

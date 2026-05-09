@@ -1,7 +1,7 @@
 import express from "express";
 import { allMessages, sendMessage } from "../controllers/messageController.js";
 import authUser from "../middleware/auth.js";
-import { upload } from "../server.js";
+import { upload } from "../middleware/upload.js";
 
 const messageRouter = express.Router();
 
