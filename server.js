@@ -7,6 +7,9 @@ import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./config/mongodb.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import userRouter from "./routes/userRoute.js";
 import chatRouter from "./routes/chatRoute.js";
 import messageRouter from "./routes/messageRoute.js";
@@ -30,7 +33,7 @@ app.use(cors({
 }));
 
 // ── Serve uploaded files as static ──
-app.use("/uploads", express.static(uploadDir));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/user", userRouter);
 app.use("/api/chat", chatRouter);
