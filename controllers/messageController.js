@@ -18,14 +18,32 @@ const allMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
     try {
         const { content, chatId } = req.body;
-        if (!content || !chatId) {
+
+        // Allow message with either text OR media (or both)
+        const hasMedia = !!req.file;
+        if (!content && !hasMedia) {
             return res.json({ success: false, message: "Invalid data" });
         }
+        if (!chatId) {
+            return res.json({ success: false, message: "chatId is required" });
+        }
+
+        // Build media fields if file was uploaded
+        let mediaUrl = null;
+        let mediaType = null;
+        if (hasMedia) {
+            mediaUrl = `/uploads/${req.file.filename}`;
+            mediaType = req.file.mimetype.startsWith("video") ? "video" : "image";
+        }
+
         let message = await messageModel.create({
             sender: req.user._id,
-            content,
-            chat: chatId
+            content: content || "",
+            chat: chatId,
+            mediaUrl,
+            mediaType,
         });
+
         message = await message.populate("sender", "name");
         message = await message.populate("chat");
         message = await message.populate("receiver");
@@ -33,6 +51,7 @@ const sendMessage = async (req, res) => {
             path: "chat.users",
             select: "name email"
         });
+
         await chatModel.findByIdAndUpdate(chatId, { latestMessage: message });
         res.json({ success: true, message });
     } catch (error) {

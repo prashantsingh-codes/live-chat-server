@@ -19,4 +19,5 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             npm install
-            pm2 restart live-chat-server
+            pm2 restart live-chat-server || pm2 start server.js --name live-chat-server
+            pm2 save
